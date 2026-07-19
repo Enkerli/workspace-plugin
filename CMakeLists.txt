@@ -33,6 +33,7 @@ enkerli_add_midi_effect_plugin(Workspace
     BUNDLE_ID    "com.enkerli.workspace"
     VERSION      "${PROJECT_VERSION}"
     DESCRIPTION  "Suite modules on one bus, in a DAW: GloriArp grooves out as MIDI, hardware MIDI in through the bindings"
+    ICON_BIG     "${CMAKE_SOURCE_DIR}/Assets/icon_1024.png"
 )
 
 target_sources(Workspace PRIVATE Source/Plugin.cpp)
@@ -85,6 +86,7 @@ if(NPXCMD)
         COMMAND "${NPXCMD}" esbuild "${WEBUI_DIR}/main.js"
                     --bundle --conditions=source
                     --loader:.css=text --loader:.svg=dataurl
+                    --loader:.txt=text --loader:.wasm=binary
                     "--define:process.env.NODE_ENV=\"production\"" --minify
                     "--outfile=${WEBUI_BUILD}/bundle.js"
         DEPENDS ${WEBUI_SRC}
