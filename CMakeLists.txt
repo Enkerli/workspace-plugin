@@ -36,6 +36,20 @@ endif()
 set(WORKSPACE_WEBUI_DIR "${CMAKE_SOURCE_DIR}/../music-suite/apps/workspace"
     CACHE PATH "Path to the Workspace WebUI source (music-suite/apps/workspace)")
 include("${CMAKE_CURRENT_SOURCE_DIR}/webui.local.cmake" OPTIONAL)
+# The default above assumes music-suite is a SIBLING checkout. Before failing,
+# probe the other supported layouts: this repo nested INSIDE the monorepo
+# (…/music-suite/Workspace), and a MUSIC_SUITE environment variable pointing at
+# the monorepo checkout. webui.local.cmake still wins when present.
+if(NOT EXISTS "${WORKSPACE_WEBUI_DIR}/main.js")
+    foreach(_webui_cand "${CMAKE_SOURCE_DIR}/../apps/workspace" "$ENV{MUSIC_SUITE}/apps/workspace")
+        if(EXISTS "${_webui_cand}/main.js")
+            set(WORKSPACE_WEBUI_DIR "${_webui_cand}" CACHE PATH
+                "Path to the Workspace WebUI source (music-suite/apps/workspace)" FORCE)
+            message(STATUS "Workspace WebUI: found at ${_webui_cand}")
+            break()
+        endif()
+    endforeach()
+endif()
 set(WEBUI_DIR   "${WORKSPACE_WEBUI_DIR}")
 set(WEBUI_BUILD "${CMAKE_CURRENT_BINARY_DIR}/webui")
 
@@ -43,7 +57,7 @@ if(NOT EXISTS "${WEBUI_DIR}/main.js")
     message(FATAL_ERROR
         "Workspace WebUI source not found at ${WEBUI_DIR}. It lives in the "
         "music-suite monorepo (apps/workspace). Check out music-suite next to "
-        "this repo, or set WORKSPACE_WEBUI_DIR in webui.local.cmake.")
+        "this repo, or set WORKSPACE_WEBUI_DIR in webui.local.cmake, or export MUSIC_SUITE=/path/to/music-suite. Layouts probed automatically: sibling checkout (../music-suite) and this repo nested inside the monorepo (../apps/workspace).")
 endif()
 
 find_program(NPXCMD npx)
