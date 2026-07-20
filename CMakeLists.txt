@@ -38,9 +38,12 @@ enkerli_add_midi_effect_plugin(Workspace
 
 target_sources(Workspace PRIVATE Source/Plugin.cpp)
 if(APPLE)
-    # Native save path for the WebView UI (share sheet on iPadOS; compiles
-    # empty on macOS where FileChooser is used instead).
-    target_sources(Workspace PRIVATE enkerli-juce/src/FileExport.mm)
+    # Native save (share sheet) + open (document picker) paths for the
+    # WebView UI (ObjC++; both compile empty on macOS where FileChooser/
+    # NSOpenPanel are used instead).
+    target_sources(Workspace PRIVATE
+        enkerli-juce/src/FileExport.mm
+        enkerli-juce/src/FileImport.mm)
 endif()
 
 # ── WebUI: built from the music-suite monorepo at configure/build time ───────

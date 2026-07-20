@@ -2,6 +2,7 @@
 #include "PluginProcessor.h"
 #include "../enkerli-juce/src/EnkerliWebView.h"
 #include "../enkerli-juce/src/FileExport.h"
+#include "../enkerli-juce/src/FileImport.h"
 #include "../enkerli-juce/src/RuntimeInfo.h"
 #include "BinaryDataWebUI.h"
 
@@ -31,8 +32,9 @@ public:
                   // Workspace layout/state → DAW session (page also keeps localStorage).
                   { "enkerliState", [this] (const juce::var& v)
                       { proc.storeUiState (v.getProperty ("json", "").toString()); } },
-                  // WKWebView can't download (TESTING.md) — native save path.
+                  // WKWebView can't download/upload (TESTING.md) — native paths.
                   { "enkerliSaveFile", [this] (const juce::var& v) { saveFile (v); } },
+                  { "enkerliOpenFile", [this] (const juce::var& v) { openFile (v); } },
               })
     {
         addAndMakeVisible (web);
@@ -73,6 +75,22 @@ private:
         if (! juce::Base64::convertFromBase64 (decoded, v.getProperty ("b64", "").toString()))
             return;
         enkerli::exportBytes (*this, name, decoded.getMemoryBlock());
+    }
+
+    void openFile (const juce::var& v)
+    {
+        const auto patterns = v.getProperty ("patterns", "*").toString();
+        juce::Component::SafePointer<WorkspaceEditor> safe (this);
+        enkerli::importFile (*this, patterns,
+            [safe] (const juce::String& name, const juce::MemoryBlock& bytes)
+            {
+                if (safe == nullptr)
+                    return;
+                auto* obj = new juce::DynamicObject();
+                obj->setProperty ("name", name);
+                obj->setProperty ("b64", juce::Base64::toBase64 (bytes.getData(), bytes.getSize()));
+                safe->web.emit ("fileOpened", juce::var (obj));
+            });
     }
 
     void timerCallback() override
