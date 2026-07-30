@@ -100,13 +100,18 @@ if(NPXCMD)
     add_custom_command(
         OUTPUT  "${WEBUI_BUILD}/bundle.js"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${WEBUI_BUILD}"
+        # Build tag, written now so it reflects THIS bundle (see the script).
+        COMMAND "${CMAKE_COMMAND}" -DOUT=${WEBUI_BUILD}/build-tag.js
+                    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/write-build-tag.cmake"
         COMMAND "${NPXCMD}" esbuild "${WEBUI_DIR}/main.js"
                     --bundle --conditions=source
+                    "--inject:${WEBUI_BUILD}/build-tag.js"
                     --loader:.css=text --loader:.svg=dataurl
                     --loader:.txt=text --loader:.wasm=binary
                     "--define:process.env.NODE_ENV=\"production\"" --minify
                     "--outfile=${WEBUI_BUILD}/bundle.js"
-        DEPENDS ${WEBUI_SRC}
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/write-build-tag.cmake" ${WEBUI_SRC}
         WORKING_DIRECTORY "${WEBUI_DIR}"
         COMMENT "Bundling Workspace WebUI with esbuild"
         VERBATIM)
